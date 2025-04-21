@@ -1,66 +1,40 @@
-
-# import numpy as np
-# from flask import Flask, request,render_template
-# import pickle
-
-# # Create flask app
-# flask_app = Flask(__name__)
-# model = pickle.load(open("model.pkl", "rb"))
-
-# @flask_app.route("/")
-# def Home():
-#     return render_template("index.html")
-
-# @flask_app.route("/predict", methods = ["POST"])
-# def predict():
-#     float_features = [float(x) for x in request.form.values()]
-#     features = [np.array(float_features)]
-#     prediction = model.predict(features)
-#     return render_template("index.html", prediction_text = "The Predicted Crop is {}".format(prediction))
-
-# if __name__ == "__main__":
-#     flask_app.run(debug=True)
-
-from flask import send_from_directory
-import os
+from flask import Flask, request, jsonify, render_template
 import numpy as np
-from flask import Flask, request, render_template
 import pickle
 
-# Initialize Flask app
+# Initialize the app
 app = Flask(__name__)
 
-# Load the model
-model = pickle.load(open("model.pkl", "rb"))
+# Load the trained model
+model = pickle.load(open('model.pkl', 'rb'))
 
-# Home route
-@app.route("/")
+# Label map
+label_map = {
+    0: "No Earthquake",
+    1: "Mild Earthquake",
+    2: "Severe Earthquake"
+}
+
+# Route to serve the HTML page
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template('index.html')  # Make sure your HTML file is named 'index.html' and inside a 'templates' folder
 
-@app.route('/farm.jpg')
-def send_image():
-    return send_from_directory(os.getcwd(), 'farm.jpg')
-
-
-# Predict route
-@app.route("/predict", methods=["POST"])
+# API route to handle predictions
+@app.route('/predict', methods=['POST'])
 def predict():
-    try:
-        # Extract and convert input values from form
-        float_features = [float(x) for x in request.form.values()]
-        features = [np.array(float_features)]
-        
-        # Make prediction
-        prediction = model.predict(features)[0]
-        
-        # Send prediction to the template
-        return render_template("index.html", prediction_text=f"The Predicted Crop is {prediction}")
-    
-    except Exception as e:
-        return render_template("index.html", prediction_text=f"Error: {str(e)}")
+    data = request.get_json(force=True)
+    lat = data['lat']
+    lon = data['lon']
+    depth = data['depth']
+
+    # Convert to numpy array and predict
+    features = np.array([[lat, lon, depth]], dtype='float32')
+    prediction = model.predict(features)
+
+    label = label_map[int(prediction[0])]
+    return jsonify({'prediction': label})
 
 # Run the app
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
-
+    app.run(debug=True)

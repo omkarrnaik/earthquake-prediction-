@@ -1,90 +1,114 @@
 <!DOCTYPE html>
-<html >
-<!--From https://codepen.io/frytyler/pen/EGdtg-->
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ML API</title>
-<!--  <link rel="style"href="style.css">-->
-  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Hind:300' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
-<!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
-   <!-- <link rel="stylesheet" href="style.css"> -->
-   <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
-
-   <style>
+  <title>Earthquake Predictor</title>
+  <style>
     body {
-    /* background-image: url("farm.jpg"); */
-    background-image: url("/farm.jpg");
+      font-family: Arial, sans-serif;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-    
-    
-    margin-top: 100px;
-    margin-bottom: 100px;
-    margin-right: 150px;
-    margin-left: 500px;
-  }
-  h1 {
-      margin-left:100px;
-  }
-  input{
-    width: 70%;
-    padding: 12px 20px;
-    margin: 8px 0;
-    box-sizing: border-box;
-    border-bottom: 4px solid black;
-  }
-  button {
-    background-color: #4CAF50; /* Green */
-    margin : auto;
-    color: white;
-    padding: 15px 100px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin-left:170px
-  }
-#predi {
-    margin-left: 90px;
-    color: #ffffff;
-    margin-top: 0px; /* This brings it closer to the button */
-}
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 320px;
+    }
 
-  
-  
-  
-   </style>
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
 
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
 
+    button {
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .result {
+      margin-top: 25px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #222;
+      padding: 10px;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+  </style>
 </head>
-
 <body>
- <div class="login">
-	<h1>Crop Prediction Model</h1>
-    <!-- N	P	K	temperature	humidity	ph	rainfall	label -->
-     <!-- Main Input For Receiving Query to our ML -->
-    <form action="{{ url_for('predict')}}"method="post">
-    	<input type="text" name="Nitrogen" placeholder="Nitrogen" required="required" />
-        <input type="text" name="Phosphorus" placeholder="Phosphorus" required="required" />
-		<input type="text" name="Potassium" placeholder="Potassium" required="required" />
-        <input type="text" name="temperature" placeholder="temperature" required="required" />
-        <input type="text" name="humidity" placeholder="humidity" required="required" />
-		<input type="text" name="pH" placeholder="pH" required="required" />
-        <input type="text" name="rainfall" placeholder="rainfall" required="required" />
-
-        <button type="submit" class="btn btn-primary btn-block btn-large">Predict</button>
+  <div class="container">
+    <h2>Earthquake Predictor</h2>
+    <form id="predictForm">
+      <label>Latitude:</label>
+      <input type="number" step="0.01" name="lat" required>
+      <label>Longitude:</label>
+      <input type="number" step="0.01" name="lon" required>
+      <label>Depth (km):</label>
+      <input type="number" step="0.01" name="depth" required>
+      <button type="submit">Predict</button>
     </form>
+    <div class="result" id="result" style="display: none;"></div>
+  </div>
 
-   <br>
-   <br>
-     <h1 id="predi">
-   {{ prediction_text }}
-     </h1>
+  <script>
+    const form = document.getElementById("predictForm");
+    const resultDiv = document.getElementById("result");
 
- </div>
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
 
+      const formData = new FormData(form);
+      const lat = parseFloat(formData.get("lat"));
+      const lon = parseFloat(formData.get("lon"));
+      const depth = parseFloat(formData.get("depth"));
 
+      // Show loading state
+      resultDiv.style.display = "block";
+      resultDiv.textContent = "Predicting...";
+
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lon, depth })
+        });
+
+        const data = await response.json();
+        resultDiv.textContent = "Prediction: " + data.prediction;
+      } catch (error) {
+        resultDiv.textContent = "Error occurred. Please try again.";
+      }
+    });
+  </script>
 </body>
 </html>

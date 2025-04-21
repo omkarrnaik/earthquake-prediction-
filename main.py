@@ -1,38 +1,55 @@
+import numpy as np
 import pandas as pd
-import pickle
 from sklearn.model_selection import train_test_split
+import pickle
+from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 
-# Load the dataset
-data = pd.read_csv('Crop_recommendation.csv')
+# Load and preprocess data
+data = pd.read_csv("dataset.csv")
+data = np.array(data)
+print(data)
 
-# Split the data into features and labels
-X = data.iloc[:, :-1]  # Features: N, P, K, temperature, humidity, ph, rainfall
-y = data.iloc[:, -1]   # Label: crop name
+X = data[:, 0:-1]
+y = data[:, -1]
+y = y.astype('int')
+X = X.astype('float32')  # Keeping features as float if coordinates/depths are not integers
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
-# Model training
-model = RandomForestClassifier()
-model.fit(X_train, y_train)
+# Train model
+rfc = RandomForestClassifier()
+rfc.fit(X_train, y_train)
 
-# Save the trained model using pickle
-pickle.dump(model, open("model.pkl", "wb"))
+# Save the model
+pickle.dump(rfc, open('model.pkl', 'wb'))
 
-# =========================
-# 🔮 Predict for new input
-# =========================
+# ------------------------
+# Sample prediction
+# ------------------------
 
-# Define your new feature input
-new_features = [[117, 32, 34, 26.27, 52.12, 6.75, 127.17]]  # Example input
+# Load the saved model
+loaded_model = pickle.load(open('model.pkl', 'rb'))
 
-# Wrap into a DataFrame to match training input structure
-feature_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-new_df = pd.DataFrame(new_features, columns=feature_names)
+# Sample input with 3 features (latitude, longitude, depth)
+sample_input = np.array([[29.06, 77.42, 5.0]])
+sample_input = sample_input.astype('float32')
 
-# Load model and make prediction
-loaded_model = pickle.load(open("model.pkl", "rb"))
-predicted_crop = loaded_model.predict(new_df)
+# Make prediction
+prediction = loaded_model.predict(sample_input)
 
-print("🌾 Predicted Crop:", predicted_crop[0])
+# Map prediction to label
+label_map = {
+    0: "No Earthquake",
+    1: "Mild Earthquake",
+    2: "Severe Earthquake"
+}
+
+# Print human-readable result
+print("Sample Prediction:", label_map[int(prediction[0])])
+
+
+
+
+
